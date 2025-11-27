@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfólio DBA | Euler Lee de Alencar</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💾</text></svg>">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #0ea5e9;    /* Azul Sky para destaque */
+            --accent-hover: #38bdf8;
+            --code-bg: #0b1120;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 4rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* --- Header --- */
+        header {
+            padding: 4rem 0 3rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .role {
+            font-size: 1.25rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .bio {
+            color: var(--text-muted);
+            max-width: 750px;
+            font-size: 1.05rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap; /* Garante que os botões não quebrem no mobile */
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--accent);
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border: 1px solid var(--accent);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--accent);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        /* --- Seções --- */
+        section {
+            margin-top: 4rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h2::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 24px;
+            background-color: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* --- Skills --- */
+        .skills-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .skill-tag {
+            background-color: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #334155;
+            color: var(--text-main);
+        }
+
+        /* --- Projetos (Cards) --- */
+        .project-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .project-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .project-badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-tuning { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge-tshoot { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .badge-cloud { background-color: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+
+        .project-body {
+            padding: 1.5rem;
+        }
+
+        .case-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media(min-width: 768px) {
+            .case-steps { grid-template-columns: 1fr 1fr; }
+        }
+
+        .step-title {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .step-content {
+            font-size: 0.95rem;
+        }
+
+        /* --- Código --- */
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            border: 1px solid #334155;
+        }
+
+        code { color: #e2e8f0; }
+        .sql-kw { color: #569cd6; font-weight: bold; }
+        .sql-str { color: #ce9178; }
+        .sql-comment { color: #6a9955; font-style: italic; }
+        .sql-func { color: #dcdcaa; }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <header>
+            <h1>Euler Lee de Alencar</h1>
+            <div class="role">&lt;Administrador de Banco de Dados /&gt;</div>
+            <p class="bio">
+                Sou Administrador/Analista de Banco de Dados com 3 anos de experiência e com foco em soluções Cloud (AWS) e ambientes híbridos. Tenho expertise em garantir alta disponibilidade, segurança e performance de SGBDs relacionais e NoSQL. Atuo na gestão completa do ciclo de vida dos dados, desde a migração e automação de processos ETL (Glue, Athena) até o Tuning de Queries e a análise de Troubleshooting.
+            </p>
+            <div class="btn-group">
+                <a href="https://www.linkedin.com/in/euler-lee-de-alencar-9aaba2204/" target="_blank" class="btn">
+                    LinkedIn
+                </a>
+                <a href="mailto:EulerLee01@gmail.com" class="btn btn-outline">
+                    EulerLee01@gmail.com
+                </a>
+                <a href="https://wa.me/5541988859797" target="_blank" class="btn btn-outline">
+                    (41) 9 8885-9797
+                </a>
+            </div>
+        </header>
+
+        <section>
+            <h2>Stack Tecnológica</h2>
+            <div class="skills-grid">
+                <div class="skill-tag">PostgreSQL</div>
+                <div class="skill-tag">PL/pgSQL</div>
+                <div class="skill-tag">SQL Server</div>
+                <div class="skill-tag">MySQL</div>
+                <div class="skill-tag">AWS RDS</div>
+                <div class="skill-tag">CloudWatch</div>
+                <div class="skill-tag">AWS Glue/Athena</div>
+                <div class="skill-tag">Performance Tuning</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Estudos de Caso (Hands-on)</h2>
+
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-title">1. Tuning de Query: De Seq Scan para Index Scan</span>
+                    <span class="project-badge badge-tuning">Performance PostgreSQL</span>
+                </div>
+                <div class="project-body">
+                    <div class="case-steps">
+                        <div>
+                            <div class="step-title">O Cenário (Diagnóstico)</div>
+                            <div class="step-content">
+                                Um relatório financeiro crítico estava levando minutos para ser gerado. 
+                                Utilizei o <code>EXPLAIN ANALYZE</code> e identifiquei um <strong>Sequential Scan</strong> em uma tabela de 15 milhões de registros devido ao uso de funções na cláusula WHERE que invalidavam o índice existente.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">A Solução e Resultado</div>
+                            <div class="step-content">
+                                Criei um índice funcional baseado na expressão exata da query.
+                                <br><br>
+                                <strong>Resultado:</strong> O custo da query caiu de 250.000 para 150. O tempo de execução baixou de 4 minutos para menos de 1 segundo.
+                            </div>
+                        </div>
+                    </div>
+                    <pre><code><span class="sql-comment">-- PLANO ANTES: Seq Scan on pagamentos (cost=0.00..254320.00)</span>
+<span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> pagamentos <span class="sql-kw">WHERE</span> <span class="sql-func">date_part</span>(<span class="sql-str">'year'</span>, data_pag) = 2024;
+
+<span class="sql-comment">-- SOLUÇÃO: Criação de Índice Funcional</span>
+<span class="sql-kw">CREATE INDEX</span> idx_pagamentos_ano <span class="sql-kw">ON</span> pagamentos (<span class="sql-func">date_part</span>(<span class="sql-str">'year'</span>, data_pag));
+
+<span class="sql-comment">-- PLANO DEPOIS: Bitmap Heap Scan using idx_pagamentos_ano (cost=0.00..152.00)</span></code></pre>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-title">2. Resolução de Deadlocks e Travamento de Aplicação</span>
+                    <span class="project-badge badge-tshoot">Troubleshooting</span>
+                </div>
+                <div class="project-body">
+                    <div class="case-steps">
+                        <div>
+                            <div class="step-title">Identificação via CloudWatch</div>
+                            <div class="step-content">
+                                Alerta de "Database Connections" e "CPU Utilization" disparou no CloudWatch simultaneamente. 
+                                A aplicação parou de responder. Acessei o banco e consultei a view <code>pg_stat_activity</code> filtrando por transações com estado 'active' há muito tempo.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Ação Imediata e Correção</div>
+                            <div class="step-content">
+                                Identifiquei dois processos competindo pelos mesmos recursos em ordem inversa. Realizei o <code>pg_terminate_backend</code> no processo bloqueador para liberar a fila.
+                                <br><br>
+                                Posteriormente, orientei a equipe de dev a padronizar a ordem de update das tabelas para evitar recorrência.
+                            </div>
+                        </div>
+                    </div>
+                    <pre><code><span class="sql-comment">-- Query utilizada para identificar quem bloqueia quem</span>
+<span class="sql-kw">SELECT</span> pid, usename, state, query 
+<span class="sql-kw">FROM</span> pg_stat_activity 
+<span class="sql-kw">WHERE</span> wait_event_type = <span class="sql-str">'Lock'</span> 
+<span class="sql-kw">AND</span> state != <span class="sql-str">'idle'</span>;</code></pre>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-title">3. Incidente Crítico Oracle RDS (Storage Full)</span>
+                    <span class="project-badge badge-cloud">AWS & Oracle</span>
+                </div>
+                <div class="project-body">
+                    <div class="case-steps">
+                        <div>
+                            <div class="step-title">O Alerta</div>
+                            <div class="step-content">
+                                Recebi notificação crítica do AWS CloudWatch: <strong>FreeStorageSpace</strong> abaixo do limite seguro em uma instância Oracle RDS de produção. O auto-extend do volume físico da AWS havia atingido o limite configurado.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Ação de Contenção</div>
+                            <div class="step-content">
+                                Conectei via client, verifiquei as tablespaces e confirmei que a tablespace de DADOS estava cheia.
+                                Adicionei um novo Datafile imediatamente utilizando as packages proprietárias do RDS (<code>rdsadmin</code>), normalizando o serviço em menos de 5 minutos, sem downtime.
+                            </div>
+                        </div>
+                    </div>
+                    <pre><code><span class="sql-comment">-- Verificação e Adição de Datafile no ambiente RDS</span>
+<span class="sql-kw">SELECT</span> tablespace_name, used_percent <span class="sql-kw">FROM</span> dba_tablespace_usage_metrics;
+
+<span class="sql-comment">-- Comando executado para expansão imediata</span>
+<span class="sql-kw">ALTER TABLESPACE</span> TSD_DADOS <span class="sql-kw">ADD DATAFILE SIZE</span> 5G <span class="sql-kw">AUTOEXTEND ON NEXT</span> 1G;</code></pre>
+                </div>
+            </div>
+
+        </section>
+
+        <footer>
+            <p>&copy; 2025 Euler Lee de Alencar - Administrador de Banco de Dados</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
