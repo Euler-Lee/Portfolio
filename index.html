@@ -276,33 +276,88 @@
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">1. Oracle: ORA-00018 e Saturação de Shared Server</span>
+                    <span class="project-title">1. PostgreSQL: Refresh Físico Paralelo de 4,2 TB (de 12h para 2h)</span>
+                    <span class="project-badge badge-pg">Automação &amp; Engenharia PostgreSQL</span>
+                </div>
+                <div class="project-body">
+                    <div class="case-steps">
+                        <div>
+                            <div class="step-title">Contexto e Escala</div>
+                            <div class="step-content">
+                                Base Protheus em <strong>PostgreSQL 16</strong> de <strong>4,2 TB</strong>. O refresh de produção para homologação levava cerca de <strong>12 horas</strong> com métodos sequenciais (dump/restore e basebackup single-stream), obrigava janela noturna e ainda disputava I/O com a produção, atrasando os times de desenvolvimento a cada ciclo.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Diagnóstico</div>
+                            <div class="step-content">
+                                Instrumentei cada etapa e descartei o storage: o gargalo <strong>não era o volume lógico nem o disco</strong>, e sim <strong>CPU single-thread</strong>. A cópia sequencial saturava um único núcleo enquanto os demais ficavam ociosos. Ler direto da produção ainda somava risco de contenção de I/O no ambiente crítico.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Solução</div>
+                            <div class="step-content">
+                                Reescrevi o processo como <strong>clone físico paralelo lendo de uma réplica</strong> (não da produção): cópia low-level dos diretórios de dados distribuída em <strong>16 processos</strong>, <code>pg_receivewal</code> fixando o ponto de consistência e reescrita de roles (tpprd para tphml) no destino. Reconstruí o storage de homologação em <strong>RAID0 de 4 vias</strong> para vazão e migrei o backup para a réplica (retenção por contagem). O endurecimento do script revelou e corrigiu <strong>4 bugs</strong> (watch de progresso, streaming de WAL, tratamento do código 24 do rsync e troca de role no clone físico).
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Resultado e Validação</div>
+                            <div class="step-content">
+                                Janela caiu de <strong>~12h para ~2h</strong>, executável em <strong>horário comercial</strong> e sem impacto na produção. Processo comprovado em execução real, com a homologação em uso pelo cliente e o backup diário na réplica validado por ciclos consecutivos.
+                            </div>
+                        </div>
+                    </div>
+                    <pre><code><span class="sql-comment"># 1. Streaming de WAL da réplica para fixar o ponto de consistência</span>
+pg_receivewal -h replica -D /wal_stage -S refresh_slot &amp;
+
+<span class="sql-comment"># 2. Cópia física paralela dos diretórios de dados (16 processos, lendo da réplica)</span>
+ls -d /replica/pgdata/base/*/ \
+  | xargs -P16 -I{} rsync -a --whole-file {} /hml/pgdata/base/
+
+<span class="sql-comment"># 3. Reescrita de role no destino (produção -> homologação) e start</span>
+psql -h hml -c "REASSIGN OWNED BY tpprd TO tphml;"
+pg_ctl -D /hml/pgdata start</code></pre>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-title">2. Oracle: ORA-00018 por Saturação de Shared Server</span>
                     <span class="project-badge badge-oracle">Troubleshooting Oracle</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
-                            <div class="step-title">O Cenário (Diagnóstico)</div>
+                            <div class="step-title">Contexto e Escala</div>
                             <div class="step-content">
-                                Um ERP de produção começou a rejeitar novas conexões com o erro <code>ORA-00018 (maximum number of sessions exceeded)</code>. A instância operava em modo <strong>Shared Server</strong> com apenas um dispatcher, e o crescimento de conexões da aplicação saturou os shared servers e o pool de sessões. Diagnostiquei pelas views <code>v$dispatcher</code>, <code>v$shared_server</code> e <code>v$resource_limit</code>.
+                                Instância <strong>Oracle 10g</strong> de um ERP legado (aplicação de coletores em campo) passou a rejeitar novas conexões com <code>ORA-00018 (maximum number of sessions exceeded)</code>, interrompendo a operação em produção.
                             </div>
                         </div>
                         <div>
-                            <div class="step-title">A Solução e Resultado</div>
+                            <div class="step-title">Diagnóstico</div>
                             <div class="step-content">
-                                Ampliei o número de dispatchers e de shared servers e ajustei os limites de <em>sessions</em> e <em>processes</em> para a carga real, aliviando a fila imediatamente. Para os serviços de integração com conexões persistentes, recomendei conexão dedicada.
-                                <br><br>
-                                <strong>Resultado:</strong> erro eliminado e conexões normalizadas, sem downtime de aplicação.
+                                A instância rodava em modo <strong>Shared Server com apenas 1 dispatcher</strong>. Cruzando <code>v$dispatcher</code>, <code>v$shared_server</code>, <code>v$resource_limit</code> e <code>v$session</code>, confirmei que o pool de sessões de shared server estava no teto: a aplicação abria conexões em rajada, cada uma consumindo uma sessão, e o único dispatcher não dava vazão.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Solução</div>
+                            <div class="step-content">
+                                Mitigação imediata com <strong>bounce controlado</strong> da instância para liberar as sessões travadas e restabelecer o atendimento. Como correção estrutural, especifiquei <strong>ampliar dispatchers e shared servers</strong>, mover as conexões persistentes de integração para modo <strong>dedicado</strong> e revisar o pool da aplicação para conter as rajadas.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Resultado e Validação</div>
+                            <div class="step-content">
+                                Serviço normalizado logo após o bounce, com as conexões voltando a ser aceitas. Plano de correção definitiva documentado para eliminar a recorrência, aguardando janela de aprovação do cliente.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment">-- Diagnóstico da saturação de shared server</span>
+                    <pre><code><span class="sql-comment">-- Confirmação da saturação do shared server</span>
 <span class="sql-kw">SELECT</span> name, status, <span class="sql-func">round</span>(busy/(busy+idle)*100,1) <span class="sql-kw">AS</span> pct_busy <span class="sql-kw">FROM</span> v$dispatcher;
-<span class="sql-kw">SELECT</span> resource_name, current_utilization, limit_value
+<span class="sql-kw">SELECT</span> resource_name, current_utilization, max_utilization, limit_value
 <span class="sql-kw">FROM</span> v$resource_limit
-<span class="sql-kw">WHERE</span> resource_name <span class="sql-kw">IN</span> (<span class="sql-str">'sessions'</span>, <span class="sql-str">'processes'</span>, <span class="sql-str">'shared_server_sessions'</span>);
+<span class="sql-kw">WHERE</span> resource_name <span class="sql-kw">IN</span> (<span class="sql-str">'sessions'</span>, <span class="sql-str">'processes'</span>);
 
-<span class="sql-comment">-- Alívio: mais dispatchers e shared servers</span>
+<span class="sql-comment">-- Correção estrutural proposta</span>
 <span class="sql-kw">ALTER SYSTEM SET</span> DISPATCHERS = <span class="sql-str">'(PROTOCOL=TCP)(DISPATCHERS=3)'</span>;
 <span class="sql-kw">ALTER SYSTEM SET</span> SHARED_SERVERS = 10;</code></pre>
                 </div>
@@ -310,63 +365,40 @@
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">2. PostgreSQL: Refresh Físico de Produção para Homologação</span>
-                    <span class="project-badge badge-pg">Automação PostgreSQL</span>
+                    <span class="project-title">3. SQL Server: Recuperação de Instância com Domínio Indisponível</span>
+                    <span class="project-badge badge-mssql">Recovery / Disaster</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
-                            <div class="step-title">O Cenário (Diagnóstico)</div>
+                            <div class="step-title">Contexto e Escala</div>
                             <div class="step-content">
-                                A cópia de produção para homologação (base multiterabyte) levava muitas horas e exigia janela noturna, atrasando os times de desenvolvimento. Ao instrumentar o processo, identifiquei que o gargalo real era <strong>CPU single-thread</strong> dos métodos sequenciais, não o disco.
+                                Instância <strong>SQL Server 2016</strong> de produção não iniciava após a indisponibilidade do controlador de domínio. Toda a operação do ERP do cliente estava parada, com pressão máxima por retorno.
                             </div>
                         </div>
                         <div>
-                            <div class="step-title">A Solução e Resultado</div>
+                            <div class="step-title">Diagnóstico</div>
                             <div class="step-content">
-                                Construí um clone físico <strong>paralelo</strong> lendo de uma réplica: cópia low-level dos diretórios de dados em 16 vias, <code>pg_receivewal</code> para garantir o ponto de consistência, e troca de <em>role</em> de produção para homologação no destino.
-                                <br><br>
-                                <strong>Resultado:</strong> janela reduzida para cerca de 2 horas, executável em horário comercial, com o backup movido para a réplica para não impactar a produção.
+                                O serviço falhava no start com <strong>erro de logon</strong>: a conta de serviço era de <strong>domínio</strong> e, sem o DC no ar, não autenticava. O Configuration Manager e o log de erro confirmavam parada por falha de credencial, <strong>não por corrupção</strong> de banco, o que direcionou a estratégia de recuperação.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Solução</div>
+                            <div class="step-content">
+                                Reconfigurei a conta de serviço para uma conta local do sistema (<code>LocalSystem</code>), removendo a dependência do domínio, e reiniciei a instância. Com o banco no ar, validei integridade física e lógica com <code>DBCC CHECKDB</code> e conferi recovery model e estado de cada base.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Resultado e Validação</div>
+                            <div class="step-content">
+                                Banco disponível em minutos, <strong>sem perda de dados</strong> e CHECKDB limpo. Registrei a pendência de retorno a uma conta de serviço gerenciada após a normalização do domínio e sinalizei o risco de EOL da versão para planejamento de upgrade.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment"># WAL contínuo da réplica para o ponto de consistência</span>
-pg_receivewal -h replica -D /wal_stage -S refresh_slot &amp;
-
-<span class="sql-comment"># Cópia paralela dos diretórios de dados (16 processos)</span>
-ls -d $PGDATA/base/*/ | xargs -P16 -I{} rsync -a {} hml:/pgdata/base/
-
-<span class="sql-comment"># Ajuste de role no destino: produção -> homologação</span>
-psql -h hml -c "ALTER DATABASE app OWNER TO app_hml;"</code></pre>
-                </div>
-            </div>
-
-            <div class="project-card">
-                <div class="project-header">
-                    <span class="project-title">3. SQL Server: Recuperação de Instância Crítica Fora do Domínio</span>
-                    <span class="project-badge badge-mssql">Recovery</span>
-                </div>
-                <div class="project-body">
-                    <div class="case-steps">
-                        <div>
-                            <div class="step-title">O Cenário (Diagnóstico)</div>
-                            <div class="step-content">
-                                Uma instância SQL Server de produção não subia após a queda do controlador de domínio: o serviço falhava ao iniciar porque a <strong>conta de serviço era de domínio</strong> e não autenticava. O ERP do cliente estava totalmente parado. O erro no log apontava falha de logon da conta de serviço.
-                            </div>
-                        </div>
-                        <div>
-                            <div class="step-title">A Solução e Resultado</div>
-                            <div class="step-content">
-                                Reconfigurei o serviço do SQL Server para uma conta local (<code>LocalSystem</code>), subindo a instância imediatamente e de forma independente do domínio, e validei a integridade com <code>DBCC CHECKDB</code>.
-                                <br><br>
-                                <strong>Resultado:</strong> banco disponível sem perda de dados, com plano posterior de retorno à conta de serviço adequada após a normalização do domínio.
-                            </div>
-                        </div>
-                    </div>
-                    <pre><code><span class="sql-comment">-- Após subir a instância, validação de integridade</span>
+                    <pre><code><span class="sql-comment">-- Com a instância no ar, validação de integridade</span>
 <span class="sql-kw">DBCC CHECKDB</span> (N<span class="sql-str">'ERP_PROD'</span>) <span class="sql-kw">WITH</span> NO_INFOMSGS, ALL_ERRORMSGS;
 
-<span class="sql-comment">-- Conferência do estado dos bancos</span>
+<span class="sql-comment">-- Conferência do estado e recovery model de cada base</span>
 <span class="sql-kw">SELECT</span> name, state_desc, recovery_model_desc
 <span class="sql-kw">FROM</span> sys.databases
 <span class="sql-kw">ORDER BY</span> name;</code></pre>
@@ -375,32 +407,45 @@ psql -h hml -c "ALTER DATABASE app OWNER TO app_hml;"</code></pre>
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">4. SAP HANA: Falha Diária de Backup por Pressão de Memória</span>
+                    <span class="project-title">4. SAP HANA: Falha Diária de Backup por OOM do Indexserver</span>
                     <span class="project-badge badge-hana">SAP HANA</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
-                            <div class="step-title">O Cenário (Diagnóstico)</div>
+                            <div class="step-title">Contexto e Escala</div>
                             <div class="step-content">
-                                O backup diário de um tenant SAP HANA falhava de forma recorrente. O diagnóstico apontou o <strong>indexserver sendo encerrado por OOM</strong> (falta de memória) durante o backup, somado a uma chave <code>hdbuserstore</code> do SystemDB apontando para a porta errada.
+                                Backup diário de um tenant <strong>SAP HANA (Business One)</strong> falhava de forma recorrente, deixando o ambiente <strong>sem ponto de recuperação confiável</strong> por vários dias, um risco crítico de negócio.
                             </div>
                         </div>
                         <div>
-                            <div class="step-title">A Solução e Resultado</div>
+                            <div class="step-title">Diagnóstico</div>
                             <div class="step-content">
-                                Ajustei o <code>global_allocation_limit</code> e ampliei o swap para eliminar o OOM, e corrigi a chave do <code>hdbuserstore</code> para a porta correta do SystemDB.
-                                <br><br>
-                                <strong>Resultado:</strong> backup diário validado com restore real do tenant, encerrando a necessidade de intervenção manual.
+                                Duas causas combinadas. O <strong>indexserver era encerrado por OOM</strong> durante o backup (memória insuficiente para a carga somada ao backup simultâneo) e a chave <code>hdbuserstore</code> da rotina apontava para a <strong>porta errada do SystemDB</strong> (30015 em vez de 30013), fazendo a automação falhar já na autenticação.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Solução</div>
+                            <div class="step-content">
+                                Ajustei o <code>global_allocation_limit</code> para <strong>48 GB</strong> e ampliei o <strong>swap para 9 GB</strong>, eliminando o OOM, e recriei a chave do <code>hdbuserstore</code> na porta correta do SystemDB (<strong>30013</strong>).
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">Resultado e Validação</div>
+                            <div class="step-content">
+                                Backup diário <strong>validado com restore real do tenant</strong>, restabelecendo o ponto de recuperação e encerrando a necessidade de intervenção manual noturna.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment">-- Ajuste do limite de alocação de memória (global.ini)</span>
+                    <pre><code><span class="sql-comment">-- Ajuste do limite de alocação de memória (global.ini): 48 GB</span>
 <span class="sql-kw">ALTER SYSTEM ALTER CONFIGURATION</span> (<span class="sql-str">'global.ini'</span>, <span class="sql-str">'SYSTEM'</span>)
   <span class="sql-kw">SET</span> (<span class="sql-str">'memorymanager'</span>, <span class="sql-str">'global_allocation_limit'</span>) = <span class="sql-str">'49152'</span> <span class="sql-kw">WITH RECONFIGURE</span>;
 
-<span class="sql-comment"># Correção da chave hdbuserstore do SystemDB (porta correta)</span>
-hdbuserstore SET SYSTEMDB "host:30013" SYSTEM &lt;senha&gt;</code></pre>
+<span class="sql-comment"># Correção da chave hdbuserstore para a porta correta do SystemDB (30013)</span>
+hdbuserstore SET SYSTEMDB "host:30013" SYSTEM &lt;senha&gt;
+
+<span class="sql-comment"># Validação: backup real do tenant e verificação no catálogo</span>
+hdbsql -U SYSTEMDB "BACKUP DATA FOR &lt;TENANT&gt; USING FILE ('backup_val')"</code></pre>
                 </div>
             </div>
 
