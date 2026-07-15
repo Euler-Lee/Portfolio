@@ -171,9 +171,10 @@
             letter-spacing: 0.05em;
         }
 
-        .badge-tuning { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .badge-tshoot { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .badge-cloud { background-color: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+        .badge-oracle { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-pg     { background-color: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+        .badge-mssql  { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge-hana   { background-color: rgba(168, 85, 247, 0.2); color: #c084fc; }
 
         .project-body {
             padding: 1.5rem;
@@ -230,15 +231,15 @@
 <body>
 
     <div class="container">
-        
+
         <header>
             <h1>Euler Lee de Alencar</h1>
             <div class="role">&lt;Administrador de Banco de Dados /&gt;</div>
             <p class="bio">
-                Sou Administrador/Analista de Banco de Dados com 3 anos de experiência e com foco em soluções Cloud (AWS) e ambientes híbridos. Tenho expertise em garantir alta disponibilidade, segurança e performance de SGBDs relacionais e NoSQL. Atuo na gestão completa do ciclo de vida dos dados, desde a migração e automação de processos ETL (Glue, Athena) até o Tuning de Queries e a análise de Troubleshooting.
+                Administrador de Banco de Dados com 4 anos de experiência em ambientes de missão crítica, com foco em Oracle e PostgreSQL e domínio consolidado de SQL Server e SAP HANA, sobre Linux e Windows. Atuo no ciclo completo de administração: alta disponibilidade e replicação, backup e recovery com restore validado, disaster recovery, performance tuning, hardening de segurança e automação de rotinas operacionais. Experiência prática em recuperação de instâncias em incidente e monitoramento proativo, sustentando disponibilidade superior a 99,9% em serviços core.
             </p>
             <div class="btn-group">
-                <a href="https://www.linkedin.com/in/euler-lee-de-alencar-9aaba2204/" target="_blank" class="btn">
+                <a href="https://www.linkedin.com/in/euler-lee-dba/" target="_blank" class="btn">
                     LinkedIn
                 </a>
                 <a href="mailto:EulerLee01@gmail.com" class="btn btn-outline">
@@ -253,117 +254,160 @@
         <section>
             <h2>Stack Tecnológica</h2>
             <div class="skills-grid">
+                <div class="skill-tag">Oracle</div>
                 <div class="skill-tag">PostgreSQL</div>
-                <div class="skill-tag">PL/pgSQL</div>
                 <div class="skill-tag">SQL Server</div>
-                <div class="skill-tag">MySQL</div>
-                <div class="skill-tag">AWS RDS</div>
-                <div class="skill-tag">CloudWatch</div>
-                <div class="skill-tag">AWS Glue/Athena</div>
+                <div class="skill-tag">SAP HANA</div>
+                <div class="skill-tag">PL/SQL</div>
+                <div class="skill-tag">PL/pgSQL</div>
+                <div class="skill-tag">T-SQL</div>
+                <div class="skill-tag">Data Guard / HSR</div>
+                <div class="skill-tag">Backup &amp; Recovery</div>
                 <div class="skill-tag">Performance Tuning</div>
+                <div class="skill-tag">Alta Disponibilidade &amp; DR</div>
+                <div class="skill-tag">Linux / Windows Server</div>
+                <div class="skill-tag">VMware vSphere</div>
+                <div class="skill-tag">Zabbix</div>
             </div>
         </section>
 
         <section>
-            <h2>Estudos de Caso (Hands-on)</h2>
+            <h2>Estudos de Caso (Casos Reais)</h2>
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">1. Tuning de Query: De Seq Scan para Index Scan</span>
-                    <span class="project-badge badge-tuning">Performance PostgreSQL</span>
+                    <span class="project-title">1. Oracle: ORA-00018 e Saturação de Shared Server</span>
+                    <span class="project-badge badge-oracle">Troubleshooting Oracle</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
                             <div class="step-title">O Cenário (Diagnóstico)</div>
                             <div class="step-content">
-                                Um relatório financeiro crítico estava levando minutos para ser gerado. 
-                                Utilizei o <code>EXPLAIN ANALYZE</code> e identifiquei um <strong>Sequential Scan</strong> em uma tabela de 15 milhões de registros devido ao uso de funções na cláusula WHERE que invalidavam o índice existente.
+                                Um ERP de produção começou a rejeitar novas conexões com o erro <code>ORA-00018 (maximum number of sessions exceeded)</code>. A instância operava em modo <strong>Shared Server</strong> com apenas um dispatcher, e o crescimento de conexões da aplicação saturou os shared servers e o pool de sessões. Diagnostiquei pelas views <code>v$dispatcher</code>, <code>v$shared_server</code> e <code>v$resource_limit</code>.
                             </div>
                         </div>
                         <div>
                             <div class="step-title">A Solução e Resultado</div>
                             <div class="step-content">
-                                Criei um índice funcional baseado na expressão exata da query.
+                                Ampliei o número de dispatchers e de shared servers e ajustei os limites de <em>sessions</em> e <em>processes</em> para a carga real, aliviando a fila imediatamente. Para os serviços de integração com conexões persistentes, recomendei conexão dedicada.
                                 <br><br>
-                                <strong>Resultado:</strong> O custo da query caiu de 250.000 para 150. O tempo de execução baixou de 4 minutos para menos de 1 segundo.
+                                <strong>Resultado:</strong> erro eliminado e conexões normalizadas, sem downtime de aplicação.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment">-- PLANO ANTES: Seq Scan on pagamentos (cost=0.00..254320.00)</span>
-<span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> pagamentos <span class="sql-kw">WHERE</span> <span class="sql-func">date_part</span>(<span class="sql-str">'year'</span>, data_pag) = 2024;
+                    <pre><code><span class="sql-comment">-- Diagnóstico da saturação de shared server</span>
+<span class="sql-kw">SELECT</span> name, status, <span class="sql-func">round</span>(busy/(busy+idle)*100,1) <span class="sql-kw">AS</span> pct_busy <span class="sql-kw">FROM</span> v$dispatcher;
+<span class="sql-kw">SELECT</span> resource_name, current_utilization, limit_value
+<span class="sql-kw">FROM</span> v$resource_limit
+<span class="sql-kw">WHERE</span> resource_name <span class="sql-kw">IN</span> (<span class="sql-str">'sessions'</span>, <span class="sql-str">'processes'</span>, <span class="sql-str">'shared_server_sessions'</span>);
 
-<span class="sql-comment">-- SOLUÇÃO: Criação de Índice Funcional</span>
-<span class="sql-kw">CREATE INDEX</span> idx_pagamentos_ano <span class="sql-kw">ON</span> pagamentos (<span class="sql-func">date_part</span>(<span class="sql-str">'year'</span>, data_pag));
-
-<span class="sql-comment">-- PLANO DEPOIS: Bitmap Heap Scan using idx_pagamentos_ano (cost=0.00..152.00)</span></code></pre>
+<span class="sql-comment">-- Alívio: mais dispatchers e shared servers</span>
+<span class="sql-kw">ALTER SYSTEM SET</span> DISPATCHERS = <span class="sql-str">'(PROTOCOL=TCP)(DISPATCHERS=3)'</span>;
+<span class="sql-kw">ALTER SYSTEM SET</span> SHARED_SERVERS = 10;</code></pre>
                 </div>
             </div>
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">2. Resolução de Deadlocks e Travamento de Aplicação</span>
-                    <span class="project-badge badge-tshoot">Troubleshooting</span>
+                    <span class="project-title">2. PostgreSQL: Refresh Físico de Produção para Homologação</span>
+                    <span class="project-badge badge-pg">Automação PostgreSQL</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
-                            <div class="step-title">Identificação via CloudWatch</div>
+                            <div class="step-title">O Cenário (Diagnóstico)</div>
                             <div class="step-content">
-                                Alerta de "Database Connections" e "CPU Utilization" disparou no CloudWatch simultaneamente. 
-                                A aplicação parou de responder. Acessei o banco e consultei a view <code>pg_stat_activity</code> filtrando por transações com estado 'active' há muito tempo.
+                                A cópia de produção para homologação (base multiterabyte) levava muitas horas e exigia janela noturna, atrasando os times de desenvolvimento. Ao instrumentar o processo, identifiquei que o gargalo real era <strong>CPU single-thread</strong> dos métodos sequenciais, não o disco.
                             </div>
                         </div>
                         <div>
-                            <div class="step-title">Ação Imediata e Correção</div>
+                            <div class="step-title">A Solução e Resultado</div>
                             <div class="step-content">
-                                Identifiquei dois processos competindo pelos mesmos recursos em ordem inversa. Realizei o <code>pg_terminate_backend</code> no processo bloqueador para liberar a fila.
+                                Construí um clone físico <strong>paralelo</strong> lendo de uma réplica: cópia low-level dos diretórios de dados em 16 vias, <code>pg_receivewal</code> para garantir o ponto de consistência, e troca de <em>role</em> de produção para homologação no destino.
                                 <br><br>
-                                Posteriormente, orientei a equipe de dev a padronizar a ordem de update das tabelas para evitar recorrência.
+                                <strong>Resultado:</strong> janela reduzida para cerca de 2 horas, executável em horário comercial, com o backup movido para a réplica para não impactar a produção.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment">-- Query utilizada para identificar quem bloqueia quem</span>
-<span class="sql-kw">SELECT</span> pid, usename, state, query 
-<span class="sql-kw">FROM</span> pg_stat_activity 
-<span class="sql-kw">WHERE</span> wait_event_type = <span class="sql-str">'Lock'</span> 
-<span class="sql-kw">AND</span> state != <span class="sql-str">'idle'</span>;</code></pre>
+                    <pre><code><span class="sql-comment"># WAL contínuo da réplica para o ponto de consistência</span>
+pg_receivewal -h replica -D /wal_stage -S refresh_slot &amp;
+
+<span class="sql-comment"># Cópia paralela dos diretórios de dados (16 processos)</span>
+ls -d $PGDATA/base/*/ | xargs -P16 -I{} rsync -a {} hml:/pgdata/base/
+
+<span class="sql-comment"># Ajuste de role no destino: produção -> homologação</span>
+psql -h hml -c "ALTER DATABASE app OWNER TO app_hml;"</code></pre>
                 </div>
             </div>
 
             <div class="project-card">
                 <div class="project-header">
-                    <span class="project-title">3. Incidente Crítico Oracle RDS (Storage Full)</span>
-                    <span class="project-badge badge-cloud">AWS & Oracle</span>
+                    <span class="project-title">3. SQL Server: Recuperação de Instância Crítica Fora do Domínio</span>
+                    <span class="project-badge badge-mssql">Recovery</span>
                 </div>
                 <div class="project-body">
                     <div class="case-steps">
                         <div>
-                            <div class="step-title">O Alerta</div>
+                            <div class="step-title">O Cenário (Diagnóstico)</div>
                             <div class="step-content">
-                                Recebi notificação crítica do AWS CloudWatch: <strong>FreeStorageSpace</strong> abaixo do limite seguro em uma instância Oracle RDS de produção. O auto-extend do volume físico da AWS havia atingido o limite configurado.
+                                Uma instância SQL Server de produção não subia após a queda do controlador de domínio: o serviço falhava ao iniciar porque a <strong>conta de serviço era de domínio</strong> e não autenticava. O ERP do cliente estava totalmente parado. O erro no log apontava falha de logon da conta de serviço.
                             </div>
                         </div>
                         <div>
-                            <div class="step-title">Ação de Contenção</div>
+                            <div class="step-title">A Solução e Resultado</div>
                             <div class="step-content">
-                                Conectei via client, verifiquei as tablespaces e confirmei que a tablespace de DADOS estava cheia.
-                                Adicionei um novo Datafile imediatamente utilizando as packages proprietárias do RDS (<code>rdsadmin</code>), normalizando o serviço em menos de 5 minutos, sem downtime.
+                                Reconfigurei o serviço do SQL Server para uma conta local (<code>LocalSystem</code>), subindo a instância imediatamente e de forma independente do domínio, e validei a integridade com <code>DBCC CHECKDB</code>.
+                                <br><br>
+                                <strong>Resultado:</strong> banco disponível sem perda de dados, com plano posterior de retorno à conta de serviço adequada após a normalização do domínio.
                             </div>
                         </div>
                     </div>
-                    <pre><code><span class="sql-comment">-- Verificação e Adição de Datafile no ambiente RDS</span>
-<span class="sql-kw">SELECT</span> tablespace_name, used_percent <span class="sql-kw">FROM</span> dba_tablespace_usage_metrics;
+                    <pre><code><span class="sql-comment">-- Após subir a instância, validação de integridade</span>
+<span class="sql-kw">DBCC CHECKDB</span> (N<span class="sql-str">'ERP_PROD'</span>) <span class="sql-kw">WITH</span> NO_INFOMSGS, ALL_ERRORMSGS;
 
-<span class="sql-comment">-- Comando executado para expansão imediata</span>
-<span class="sql-kw">ALTER TABLESPACE</span> TSD_DADOS <span class="sql-kw">ADD DATAFILE SIZE</span> 5G <span class="sql-kw">AUTOEXTEND ON NEXT</span> 1G;</code></pre>
+<span class="sql-comment">-- Conferência do estado dos bancos</span>
+<span class="sql-kw">SELECT</span> name, state_desc, recovery_model_desc
+<span class="sql-kw">FROM</span> sys.databases
+<span class="sql-kw">ORDER BY</span> name;</code></pre>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-title">4. SAP HANA: Falha Diária de Backup por Pressão de Memória</span>
+                    <span class="project-badge badge-hana">SAP HANA</span>
+                </div>
+                <div class="project-body">
+                    <div class="case-steps">
+                        <div>
+                            <div class="step-title">O Cenário (Diagnóstico)</div>
+                            <div class="step-content">
+                                O backup diário de um tenant SAP HANA falhava de forma recorrente. O diagnóstico apontou o <strong>indexserver sendo encerrado por OOM</strong> (falta de memória) durante o backup, somado a uma chave <code>hdbuserstore</code> do SystemDB apontando para a porta errada.
+                            </div>
+                        </div>
+                        <div>
+                            <div class="step-title">A Solução e Resultado</div>
+                            <div class="step-content">
+                                Ajustei o <code>global_allocation_limit</code> e ampliei o swap para eliminar o OOM, e corrigi a chave do <code>hdbuserstore</code> para a porta correta do SystemDB.
+                                <br><br>
+                                <strong>Resultado:</strong> backup diário validado com restore real do tenant, encerrando a necessidade de intervenção manual.
+                            </div>
+                        </div>
+                    </div>
+                    <pre><code><span class="sql-comment">-- Ajuste do limite de alocação de memória (global.ini)</span>
+<span class="sql-kw">ALTER SYSTEM ALTER CONFIGURATION</span> (<span class="sql-str">'global.ini'</span>, <span class="sql-str">'SYSTEM'</span>)
+  <span class="sql-kw">SET</span> (<span class="sql-str">'memorymanager'</span>, <span class="sql-str">'global_allocation_limit'</span>) = <span class="sql-str">'49152'</span> <span class="sql-kw">WITH RECONFIGURE</span>;
+
+<span class="sql-comment"># Correção da chave hdbuserstore do SystemDB (porta correta)</span>
+hdbuserstore SET SYSTEMDB "host:30013" SYSTEM &lt;senha&gt;</code></pre>
                 </div>
             </div>
 
         </section>
 
         <footer>
-            <p>&copy; 2025 Euler Lee de Alencar - Administrador de Banco de Dados</p>
+            <p>&copy; 2026 Euler Lee de Alencar | Administrador de Banco de Dados</p>
         </footer>
 
     </div>
